@@ -12,7 +12,7 @@
 - Java 21+
 - JPA
 - Spring Boot 3+
-- MySQL 8+****
+- MySQL 8+
 
 ## 실행 방법
 ## API 목록 및 예시
