@@ -1,7 +1,7 @@
 ## 프로젝트 개요
 다양한 이벤트 알림 발송 시의 상황을 가정하고 백엔드단 시스템 설계 및 구현을 하였습니다.  
 멱등성, 예외처리에 대한 재시도, 그리고 최대한 기존 기술 스택을 활용한 아키텍처 설계 고민을 하였습니다.(추가적인 인프라 발생 비용을 줄이기 위해)
-![프로젝트 전체 아키텍처](../notification-system-design-main/system-architecture.png)
+![프로젝트 전체 아키텍처](./system-architecture.png)
 전체 아키텍처는 위와 같습니다.
 크게 3가지 기능을 구현하였습니다.
 - 중복처리에 대한 **멱등성 처리**
@@ -42,7 +42,7 @@ ERD 추가
 - `@TransactionalEventListener(phase = AFTER_COMMIT)`는 필요 시 보조 트리거로만 활용하고, 핵심 내구성 보장은 Outbox 패턴으로 처리합니다.
 
 ### 3. 네트워크 장애와 재시도 처리
-![네트워크 에러 상황](../notification-system-design-main/network-exception.png)
+![네트워크 에러 상황](./network-exception.png)
 
 #### 3.1 Spring <-> 외부 서버 구간 장애
 **상황**: `Spring <-> 외부 서버` 구간에서 connection timeout, read timeout, 429, 일시적 5xx 오류가 발생할 수 있습니다.  
