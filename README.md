@@ -16,6 +16,79 @@
 
 ## 실행 방법
 ## API 목록 및 예시
+#### 알림 발송 요청
+`POST /api/notifications`
+```json
+Request
+{
+  "recipientId": 1001,
+  "notificationType": "PAYMENT_CONFIRMED",
+  "channel": "EMAIL",
+  "referenceId": 5001
+}
+
+Response
+{
+  "notificationId": 1,
+  "status": "PENDING",
+  "accepted": true,
+  "message": "알림 요청이 접수되었습니다."
+}
+
+```
+#### 특정 알림 조회
+`GET /api/notifications/{notificationId}`
+헤더: `X-USER-ID: 1001`
+```json
+Response
+{
+  "notificationId": 1,
+  "recipientId": 1001,
+  "notificationType": "PAYMENT_CONFIRMED",
+  "channel": "EMAIL",
+  "referenceId": 5001,
+  "status": "SENT",
+  "isRead": false,
+  "readAt": null,
+  "sentAt": "2026-04-08T15:20:31",
+  "lastFailureCode": null,
+  "lastFailureMessage": null,
+  "createdAt": "2026-04-08T15:20:00"
+}
+```
+#### 사용자 알림 목록 조회
+`GET /api/notifications?read=UNREAD&page=0&size=20`
+헤더: `X-USER-ID: 1001`
+```json
+Response
+{
+  "content": [
+    {
+      "notificationId": 3,
+      "notificationType": "COURSE_START_D_MINUS_1",
+      "channel": "IN_APP",
+      "status": "SENT",
+      "isRead": false,
+      "readAt": null,
+      "sentAt": "2026-04-08T09:00:00",
+      "createdAt": "2026-04-08T08:59:50"
+    },
+    {
+      "notificationId": 1,
+      "notificationType": "PAYMENT_CONFIRMED",
+      "channel": "EMAIL",
+      "status": "SENT",
+      "isRead": false,
+      "sentAt": "2026-04-08T15:20:31",
+      "createdAt": "2026-04-08T15:20:00"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "hasNext": false
+}
+```
+
 ## 데이터 모델 설명
 알림 테이블과 알림 이벤트에 대한 영속성 보장을 위해 알림 아웃박스 테이블을 설계하였습니다. 
 #### 알림 테이블
@@ -118,7 +191,7 @@ erDiagram
 #### 설명:
 - 처리 중 상태일 때 어느 부분에서 문제가 발생했는 지 파악하는 것이 필요할 것이라고 생각이 들었습니다.
 - 서버 재시작 후에도 미처리 알림이 없기 위해 알림 이벤트를 Outbox 패턴을 활용한 테이블에 기록하는 것이 필요하다고 판단하였습니다.
-- 다중 인스턴스 환경에서 동일 알림 중복 처리를 막기 위해 **멱등성 개념**과 더불어 **Outbox 테이블에 동시에 접근하는 것을 막는 기법**이 필요함을 느꼈습니다.
+- 다중 인스턴스 환경에서 동일 알림 중복 처리를 막기 위해 **멱등성 개념**과 더불어 **Outbox 테이블에 동시에 접근하는 것을 막는 기법**이 필요함을 생각하였습니다.
 
 ```plain
 선택 구현
@@ -243,7 +316,6 @@ Outbox테이블에서 아직 PENDING인 상태인 row가 비동기 스레드와 
 - lease_timeout 지난 PROCESSING 상태인 데이터
 ```
 2번 트랜잭션 아웃박스 패턴을 활용하여 관련 필드들을 기록하였고 에러 로그를 확인할 수 있는 필드도 추가하도록 하였습니다.
-
 
 ## 테스트 실행 방법
 ## 미구현 / 제약사항
