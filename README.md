@@ -17,7 +17,54 @@
 ## 실행 방법
 ## API 목록 및 예시
 ## 데이터 모델 설명
-ERD 추가
+알림 테이블과 알림 이벤트에 대한 영속성 보장을 위해 알림 아웃박스 테이블을 설계하였습니다. 
+#### 알림 테이블
+- `notification_type`: 알림 유형
+- `reference_key`: 동일 이벤트 식별값(참조 데이터)
+- `channel`: 이메일 or 인앱 구분
+- `status`: 사용자 관점의 발송 상태(`PENDING`, `SENDING`, `SENT`, `FAILED`)
+#### 알림 아웃박스 테이블
+- `status`: 워커 처리 상태 (`PENDING`, `PROCESSING`, `COMPLETED`, `DEAD`)
+- `retry_count`: 현재까지 재시도한 횟수
+- `available_at`: 아웃박스 레코드를 다시 처리할 수 있는 시각
+- `locked_by`: 다중 인스턴스 환경에서 어떤 인스턴스가 선점했는지 식별하기 위한 값
+- `last_failure_code`, `last_failure_message`: 마지막 실패 원인 기록
+
+
+```mermaid
+erDiagram
+    NOTIFICATION {
+        BIGINT id PK
+        BIGINT recipient_id
+        VARCHAR notification_type
+        VARCHAR reference_key
+        VARCHAR channel
+        VARCHAR status
+        TEXT title
+        TEXT body
+        DATETIME sent_at
+        DATETIME read_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    NOTIFICATION_OUTBOX {
+        BIGINT id PK
+        BIGINT notification_id FK
+        VARCHAR status
+        INT retry_count
+        DATETIME available_at
+        VARCHAR locked_by
+        DATETIME locked_at
+        VARCHAR last_failure_code
+        TEXT last_failure_message
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
+    NOTIFICATION ||--|| NOTIFICATION_OUTBOX : has
+
+```
 ## 요구사항 해석 및 가정
 ```plain
 배경 시나리오 1)
@@ -133,5 +180,7 @@ read timeout 처럼 발송 성공 여부가 불확실한 경우를 대비하여,
 - 멱등 키 생성을 클라이언트쪽에서 할 지, 스프링 서버에서 할 지 고민 
 - Read Timeout 시 중복 처리 고민해야 될 부분
 - Outbox패턴에서 재시도 전략 논블로킹으로 어떻게 풀어야 될 지
+- Outbox 테이블 필드 설계시 고려해야 될 부분들 
 - 개선한다면: 대규모 상황 케이스 ~~
 - 선택 구현의 재시도 초기화 정책 어떻게 설정할 지
+- 필드 설계시 null로 조건 검색할 지 or 따로 필드를 추가할 지
