@@ -1,0 +1,4 @@
+app:
+  notification:
+    seed:
+      enabled: true
