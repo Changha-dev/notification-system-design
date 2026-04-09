@@ -1,0 +1,33 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3406/notification_system?createDatabaseIfNotExist=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:notification}
+    password: ${DB_PASSWORD:notification}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+  sql:
+    init:
+      mode: always
+
+app:
+  notification:
+    auto-dispatch-enabled: true
+    retry:
+      max-attempts: 3
+      base-delay-seconds: 1
+    recovery:
+      batch-size: 20
+      lease-timeout-seconds: 30
+    executor:
+      type: platform
+
+logging:
+  level:
+    com.changha.notification: info

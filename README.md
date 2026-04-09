@@ -15,6 +15,40 @@
 - MySQL 8+
 
 ## 실행 방법
+### 사전 준비
+- Java 21+
+- 애플리케이션 실행 시: MySQL 8+
+- 테스트 실행 시: Docker Desktop 또는 Docker Engine
+
+### 애플리케이션 실행
+1. MySQL 8+를 실행합니다.
+2. 애플리케이션 전용 계정과 데이터베이스를 생성합니다.
+```sql
+CREATE DATABASE IF NOT EXISTS notification_system;
+CREATE USER IF NOT EXISTS 'notification'@'localhost' IDENTIFIED BY 'notification';
+CREATE USER IF NOT EXISTS 'notification'@'127.0.0.1' IDENTIFIED BY 'notification';
+GRANT ALL PRIVILEGES ON notification_system.* TO 'notification'@'localhost';
+GRANT ALL PRIVILEGES ON notification_system.* TO 'notification'@'127.0.0.1';
+FLUSH PRIVILEGES;
+```
+3. 로컬 환경에 맞게 DB 접속 정보를 환경변수로 지정합니다.
+```bash
+export DB_URL="jdbc:mysql://localhost:3306/notification_system?createDatabaseIfNotExist=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8"
+export DB_USERNAME="notification"
+export DB_PASSWORD="notification"
+```
+4. 애플리케이션을 실행합니다.
+```bash
+./gradlew bootRun
+```
+
+### 테스트 실행
+- 테스트는 `Testcontainers MySQL`을 사용하므로, **Docker가 실행 중이면 로컬 MySQL 없이도** 동작합니다.
+- Docker가 없는 환경에서는 MySQL 통합 테스트가 자동으로 스킵되고 단위 테스트만 실행됩니다.
+
+```bash
+./gradlew test
+```
 ## API 목록 및 예시
 #### 알림 발송 요청
 `POST /api/notifications`
