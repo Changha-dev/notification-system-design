@@ -28,6 +28,7 @@ import com.changha.notification.dto.NotificationSummaryResponse;
 import com.changha.notification.dto.ReadFilter;
 import com.changha.notification.dto.ReadNotificationResponse;
 import com.changha.notification.event.NotificationOutboxCreatedEvent;
+import com.changha.notification.event.NotificationScheduleCreatedEvent;
 import com.changha.notification.repository.NotificationOutboxRepository;
 import com.changha.notification.repository.NotificationRepository;
 import com.changha.notification.repository.NotificationScheduleRepository;
@@ -166,7 +167,9 @@ public class NotificationApplicationService {
                         scheduleAt
                 );
         if (existing.isPresent()) {
-            return new NotificationAcceptedResponse(null, existing.get().getId(), existing.get().getStatus().name(), true,
+            NotificationSchedule schedule = existing.get();
+            eventPublisher.publishEvent(new NotificationScheduleCreatedEvent(schedule.getId(), schedule.getScheduledAt()));
+            return new NotificationAcceptedResponse(null, schedule.getId(), schedule.getStatus().name(), true,
                     "알림 예약 요청이 접수되었습니다.");
         }
 
@@ -179,6 +182,7 @@ public class NotificationApplicationService {
                         request.channel(),
                         scheduleAt
                 ));
+                eventPublisher.publishEvent(new NotificationScheduleCreatedEvent(schedule.getId(), schedule.getScheduledAt()));
                 return new NotificationAcceptedResponse(null, schedule.getId(), schedule.getStatus().name(), true,
                         "알림 예약 요청이 접수되었습니다.");
             });
@@ -192,6 +196,7 @@ public class NotificationApplicationService {
                             scheduleAt
                     )
                     .orElseThrow(() -> exception);
+            eventPublisher.publishEvent(new NotificationScheduleCreatedEvent(schedule.getId(), schedule.getScheduledAt()));
             return new NotificationAcceptedResponse(null, schedule.getId(), schedule.getStatus().name(), true,
                     "알림 예약 요청이 접수되었습니다.");
         }

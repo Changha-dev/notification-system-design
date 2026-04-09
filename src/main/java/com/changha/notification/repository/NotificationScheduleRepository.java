@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.changha.notification.domain.NotificationChannel;
@@ -32,6 +31,8 @@ public interface NotificationScheduleRepository extends JpaRepository<Notificati
             NotificationChannel channel,
             LocalDateTime scheduledAt
     );
+
+    List<NotificationSchedule> findByStatusOrderByScheduledAtAsc(NotificationScheduleStatus status);
 
     @Query("""
         select schedule

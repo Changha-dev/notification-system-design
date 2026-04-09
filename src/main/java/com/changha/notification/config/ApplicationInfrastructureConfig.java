@@ -17,7 +17,9 @@ import org.springframework.core.task.support.TaskExecutorAdapter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 
 import com.changha.notification.util.NotificationDispatchExecutor;
 
@@ -31,6 +33,17 @@ public class ApplicationInfrastructureConfig {
     @Bean
     public Clock clock() {
         return Clock.systemDefaultZone();
+    }
+
+    @Bean
+    public TaskScheduler taskScheduler(Clock clock) {
+        ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
+        taskScheduler.setPoolSize(4);
+        taskScheduler.setThreadNamePrefix("notification-schedule-");
+        taskScheduler.setRemoveOnCancelPolicy(true);
+        taskScheduler.setClock(clock);
+        taskScheduler.initialize();
+        return taskScheduler;
     }
 
     @Bean
