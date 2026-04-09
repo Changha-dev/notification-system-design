@@ -23,14 +23,16 @@ import static org.mockito.Mockito.reset;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(TestClockConfig.class)
-@Testcontainers(disabledWithoutDocker = true)
 public abstract class AbstractMySqlIntegrationTest {
 
-    @Container
     static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.4")
             .withDatabaseName("notification_test")
             .withUsername("test")
             .withPassword("test");
+
+    static {
+        MYSQL.start();
+    }
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
