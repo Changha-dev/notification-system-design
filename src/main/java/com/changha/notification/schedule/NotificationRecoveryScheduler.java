@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +14,7 @@ import com.changha.notification.service.NotificationOutboxProcessor;
 import com.changha.notification.util.InstanceIdentifier;
 
 @Component
+@RequiredArgsConstructor
 public class NotificationRecoveryScheduler {
 
     private final NotificationProperties notificationProperties;
@@ -20,20 +22,6 @@ public class NotificationRecoveryScheduler {
     private final NotificationOutboxProcessor notificationOutboxProcessor;
     private final InstanceIdentifier instanceIdentifier;
     private final Clock clock;
-
-    public NotificationRecoveryScheduler(
-            NotificationProperties notificationProperties,
-            NotificationOutboxRepository outboxRepository,
-            NotificationOutboxProcessor notificationOutboxProcessor,
-            InstanceIdentifier instanceIdentifier,
-            Clock clock
-    ) {
-        this.notificationProperties = notificationProperties;
-        this.outboxRepository = outboxRepository;
-        this.notificationOutboxProcessor = notificationOutboxProcessor;
-        this.instanceIdentifier = instanceIdentifier;
-        this.clock = clock;
-    }
 
     @Scheduled(fixedDelayString = "5000")
     public void scheduledRecoverAndDispatch() {

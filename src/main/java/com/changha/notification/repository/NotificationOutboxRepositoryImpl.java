@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,13 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.changha.notification.domain.NotificationOutboxStatus;
 
 @Repository
+@RequiredArgsConstructor
 public class NotificationOutboxRepositoryImpl implements NotificationOutboxRepositoryCustom {
 
     private final JdbcTemplate jdbcTemplate;
-
-    public NotificationOutboxRepositoryImpl(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
 
     @Override
     @Transactional

@@ -1,5 +1,6 @@
 package com.changha.notification.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -10,24 +11,13 @@ import com.changha.notification.util.InstanceIdentifier;
 import com.changha.notification.util.NotificationDispatchExecutor;
 
 @Component
+@RequiredArgsConstructor
 public class NotificationOutboxAsyncDispatcher {
 
     private final NotificationProperties notificationProperties;
     private final NotificationOutboxProcessor notificationOutboxProcessor;
     private final NotificationDispatchExecutor dispatchExecutor;
     private final InstanceIdentifier instanceIdentifier;
-
-    public NotificationOutboxAsyncDispatcher(
-            NotificationProperties notificationProperties,
-            NotificationOutboxProcessor notificationOutboxProcessor,
-            NotificationDispatchExecutor dispatchExecutor,
-            InstanceIdentifier instanceIdentifier
-    ) {
-        this.notificationProperties = notificationProperties;
-        this.notificationOutboxProcessor = notificationOutboxProcessor;
-        this.dispatchExecutor = dispatchExecutor;
-        this.instanceIdentifier = instanceIdentifier;
-    }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handle(NotificationOutboxCreatedEvent event) {

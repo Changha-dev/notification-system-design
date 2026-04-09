@@ -3,18 +3,16 @@ package com.changha.notification.repository;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
+@RequiredArgsConstructor
 public class MemberStatsRepositoryImpl implements MemberStatsRepositoryCustom {
 
     private final JdbcTemplate jdbcTemplate;
-
-    public MemberStatsRepositoryImpl(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
 
     @Override
     @Transactional

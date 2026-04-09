@@ -1,18 +1,16 @@
 package com.changha.notification.sender;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import com.changha.notification.domain.Notification;
 import com.changha.notification.domain.NotificationChannel;
 
 @Component
+@RequiredArgsConstructor
 public class EmailNotificationSender implements NotificationSender {
 
-    private final NotificationGateway gateway;
-
-    public EmailNotificationSender(LoggingEmailNotificationGateway gateway) {
-        this.gateway = gateway;
-    }
+    private final LoggingEmailNotificationGateway gateway;
 
     @Override
     public NotificationChannel channel() {

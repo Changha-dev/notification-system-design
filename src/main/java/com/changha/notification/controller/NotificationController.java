@@ -3,6 +3,7 @@ package com.changha.notification.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,13 +27,10 @@ import com.changha.notification.service.NotificationApplicationService;
 @RestController
 @RequestMapping("/api/notifications")
 @Tag(name = "Notifications", description = "알림 생성, 조회, 읽음 처리 API")
+@RequiredArgsConstructor
 public class NotificationController {
 
     private final NotificationApplicationService notificationApplicationService;
-
-    public NotificationController(NotificationApplicationService notificationApplicationService) {
-        this.notificationApplicationService = notificationApplicationService;
-    }
 
     @PostMapping
     @Operation(summary = "알림 발송 요청", description = "즉시 발송 또는 예약 발송 알림을 접수합니다.")

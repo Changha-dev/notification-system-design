@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -14,21 +15,12 @@ import com.changha.notification.repository.NotificationScheduleRepository;
 import com.changha.notification.service.NotificationApplicationService;
 
 @Component
+@RequiredArgsConstructor
 public class NotificationScheduleDispatcher {
 
     private final NotificationScheduleRepository notificationScheduleRepository;
     private final NotificationApplicationService notificationApplicationService;
     private final Clock clock;
-
-    public NotificationScheduleDispatcher(
-            NotificationScheduleRepository notificationScheduleRepository,
-            NotificationApplicationService notificationApplicationService,
-            Clock clock
-    ) {
-        this.notificationScheduleRepository = notificationScheduleRepository;
-        this.notificationApplicationService = notificationApplicationService;
-        this.clock = clock;
-    }
 
     @Scheduled(fixedDelayString = "5000")
     @SchedulerLock(name = "scheduledNotificationDispatch", lockAtMostFor = "PT30S", lockAtLeastFor = "PT1S")

@@ -1,5 +1,6 @@
 package com.changha.notification.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import com.changha.notification.domain.NotificationChannel;
@@ -8,13 +9,10 @@ import com.changha.notification.template.NotificationTemplate;
 import com.changha.notification.template.NotificationTemplateProvider;
 
 @Component
+@RequiredArgsConstructor
 public class NotificationTemplateRenderer {
 
     private final NotificationTemplateProvider templateProvider;
-
-    public NotificationTemplateRenderer(NotificationTemplateProvider templateProvider) {
-        this.templateProvider = templateProvider;
-    }
 
     public RenderedNotificationContent render(NotificationType type, NotificationChannel channel, Long referenceId) {
         NotificationTemplate template = templateProvider.findTemplate(type, channel);
