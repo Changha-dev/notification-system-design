@@ -1,9 +1,7 @@
 package com.changha.notification.schedule;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
+import java.sql.Timestamp;
+import java.time.Instant;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,28 +52,42 @@ class NotificationScheduleDispatcherIntegrationTest extends AbstractMySqlIntegra
         assertThat(notificationOutboxRepository.count()).isEqualTo(1);
     }
 
-    @DisplayName("다수의 인스턴스 또는 스레드에서 동시 처리 시 잠금을 통해 중복 발송을 방지해야 한다")
+    @DisplayName("ShedLock이 이미 점유 중이면 스케줄 메서드 실행을 건너뛰어야 한다")
     @Test
-    void shedLockShouldPreventDuplicateDispatchUnderConcurrentCalls() throws Exception {
+    void scheduledMethodShouldSkipDispatchWhenShedLockIsAlreadyHeld() {
         CreateNotificationRequest request = NotificationFixtures.createScheduledEmailRequest(mutableClock.now().plusMinutes(1));
-        notificationApplicationService.accept(request);
+        Long scheduleId = notificationApplicationService.accept(request).scheduleId();
+        Instant now = Instant.now();
+
+        jdbcTemplate.update("""
+                        insert into shedlock (name, lock_until, locked_at, locked_by)
+                        values (?, ?, ?, ?)
+                        on duplicate key update
+                            lock_until = values(lock_until),
+                            locked_at = values(locked_at),
+                            locked_by = values(locked_by)
+                        """,
+                "scheduledNotificationDispatch",
+                Timestamp.from(now.plusSeconds(30)),
+                Timestamp.from(now),
+                "test-lock"
+        );
+
         mutableClock.advanceSeconds(61);
 
-        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            CompletableFuture<Integer> first = CompletableFuture.supplyAsync(
-                    notificationScheduleDispatcher::dispatchDueSchedules,
-                    executor
-            );
-            CompletableFuture<Integer> second = CompletableFuture.supplyAsync(
-                    notificationScheduleDispatcher::dispatchDueSchedules,
-                    executor
-            );
+        notificationScheduleDispatcher.scheduledDispatchDueSchedules();
 
-            List<Integer> results = List.of(first.get(), second.get());
+        assertThat(notificationRepository.count()).isZero();
+        assertThat(notificationOutboxRepository.count()).isZero();
+        assertThat(notificationScheduleRepository.findById(scheduleId).orElseThrow().getStatus().name()).isEqualTo("PENDING");
 
-            assertThat(results.stream().mapToInt(Integer::intValue).sum()).isEqualTo(1);
-            assertThat(notificationRepository.count()).isEqualTo(1);
-            assertThat(notificationOutboxRepository.count()).isEqualTo(1);
-        }
+        jdbcTemplate.update("delete from shedlock where name = ?", "scheduledNotificationDispatch");
+
+        int dispatched = notificationScheduleDispatcher.dispatchDueSchedules();
+
+        assertThat(dispatched).isEqualTo(1);
+        assertThat(notificationRepository.count()).isEqualTo(1);
+        assertThat(notificationOutboxRepository.count()).isEqualTo(1);
+        assertThat(notificationScheduleRepository.findById(scheduleId).orElseThrow().getStatus().name()).isEqualTo("DISPATCHED");
     }
 }

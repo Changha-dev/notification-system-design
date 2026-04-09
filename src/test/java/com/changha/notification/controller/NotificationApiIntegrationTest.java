@@ -143,4 +143,34 @@ class NotificationApiIntegrationTest extends AbstractMySqlIntegrationTest {
         assertThat(notificationRepository.count()).isZero();
         assertThat(outboxRepository.count()).isZero();
     }
+
+    @DisplayName("중복된 예약 알림 생성 요청 시 단일 예약 스케줄만 유지되어야 한다")
+    @Test
+    void duplicateScheduledCreateShouldKeepSingleSchedule() throws Exception {
+        CreateNotificationRequest request = NotificationFixtures.createScheduledEmailRequest(mutableClock.now().plusMinutes(10));
+
+        String firstBody = mockMvc.perform(post("/api/notifications")
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(request)))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.scheduleId").isNumber())
+                .andExpect(jsonPath("$.notificationId").value(nullValue()))
+                .andReturn().getResponse().getContentAsString();
+
+        String secondBody = mockMvc.perform(post("/api/notifications")
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsBytes(request)))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.scheduleId").isNumber())
+                .andExpect(jsonPath("$.notificationId").value(nullValue()))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode firstResponse = objectMapper.readTree(firstBody);
+        JsonNode secondResponse = objectMapper.readTree(secondBody);
+
+        assertThat(firstResponse.get("scheduleId").asLong()).isEqualTo(secondResponse.get("scheduleId").asLong());
+        assertThat(scheduleRepository.count()).isEqualTo(1);
+        assertThat(notificationRepository.count()).isZero();
+        assertThat(outboxRepository.count()).isZero();
+    }
 }

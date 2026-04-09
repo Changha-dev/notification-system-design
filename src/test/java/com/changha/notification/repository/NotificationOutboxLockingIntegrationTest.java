@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.changha.notification.controller.NotificationFixtures;
 import com.changha.notification.service.NotificationApplicationService;
 import com.changha.notification.testsupport.AbstractMySqlIntegrationTest;
 

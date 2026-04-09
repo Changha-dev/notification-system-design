@@ -83,6 +83,8 @@ class NotificationProcessingIntegrationTest extends AbstractMySqlIntegrationTest
         assertThat(firstAttempt.getStatus()).isEqualTo(NotificationOutboxStatus.PENDING);
         assertThat(firstAttempt.getRetryCount()).isEqualTo(1);
         assertThat(firstAttempt.getAvailableAt()).isEqualTo(mutableClock.now().plusSeconds(5));
+        assertThat(firstAttempt.getLastFailureCode()).isEqualTo("RATE_LIMIT");
+        assertThat(firstAttempt.getLastFailureMessage()).isEqualTo("Too many requests");
         assertThat(firstNotification.getStatus()).isEqualTo(NotificationStatus.PENDING);
 
         mutableClock.advanceSeconds(5);
@@ -118,6 +120,8 @@ class NotificationProcessingIntegrationTest extends AbstractMySqlIntegrationTest
         assertThat(secondAttempt.getStatus()).isEqualTo(NotificationOutboxStatus.PENDING);
         assertThat(secondAttempt.getRetryCount()).isEqualTo(2);
         assertThat(secondAttempt.getAvailableAt()).isEqualTo(mutableClock.now().plusSeconds(10));
+        assertThat(secondAttempt.getLastFailureCode()).isEqualTo("NETWORK_TIMEOUT");
+        assertThat(secondAttempt.getLastFailureMessage()).isEqualTo("Timed out");
 
         mutableClock.advanceSeconds(10);
         notificationOutboxProcessor.processPendingOutbox(outboxId, "worker-3");
@@ -125,6 +129,8 @@ class NotificationProcessingIntegrationTest extends AbstractMySqlIntegrationTest
         NotificationOutbox outbox = notificationOutboxRepository.findById(outboxId).orElseThrow();
         Notification notification = notificationRepository.findAll().getFirst();
         assertThat(outbox.getStatus()).isEqualTo(NotificationOutboxStatus.DEAD);
+        assertThat(outbox.getLastFailureCode()).isEqualTo("NETWORK_TIMEOUT");
+        assertThat(outbox.getLastFailureMessage()).isEqualTo("Timed out");
         assertThat(notification.getStatus()).isEqualTo(NotificationStatus.FAILED);
         verify(emailGateway, times(3)).send(any(), anyString());
     }
@@ -186,6 +192,8 @@ class NotificationProcessingIntegrationTest extends AbstractMySqlIntegrationTest
         NotificationOutbox outbox = notificationOutboxRepository.findById(outboxId).orElseThrow();
         Notification notification = notificationRepository.findAll().getFirst();
         assertThat(outbox.getStatus()).isEqualTo(NotificationOutboxStatus.DEAD);
+        assertThat(outbox.getLastFailureCode()).isEqualTo("INVALID_EMAIL");
+        assertThat(outbox.getLastFailureMessage()).isEqualTo("Invalid destination");
         assertThat(notification.getStatus()).isEqualTo(NotificationStatus.FAILED);
     }
 
