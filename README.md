@@ -14,7 +14,7 @@
 ## 기술 스택
 - Java 21+
 - JPA
-- Spring Boot 3+
+- Spring Boot 3.4
 - MySQL 8+
 
 ## 실행 방법
