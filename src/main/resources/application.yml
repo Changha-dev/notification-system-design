@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    default: local
   datasource:
     url: ${DB_URL:jdbc:mysql://localhost:3406/notification_system?createDatabaseIfNotExist=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
     username: ${DB_USERNAME:notification}
@@ -7,7 +9,7 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     properties:
       hibernate:
         format_sql: true
@@ -31,3 +33,10 @@ app:
 logging:
   level:
     com.changha.notification: info
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method

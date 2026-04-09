@@ -37,14 +37,17 @@ export DB_URL="jdbc:mysql://localhost:3306/notification_system?createDatabaseIfN
 export DB_USERNAME="notification"
 export DB_PASSWORD="notification"
 ```
-4. 샘플 데이터까지 함께 보고 싶다면 `local` 프로필을 활성화합니다.
-```bash
-export SPRING_PROFILES_ACTIVE="local"
-```
+4. 기본 프로필은 `application.yml`에서 `local`로 지정되어 있습니다.
+필요하면 `spring.profiles.default` 값을 바꿔 다른 기본 프로필로 실행할 수 있습니다.
 5. 애플리케이션을 실행합니다.
 ```bash
 ./gradlew bootRun
 ```
+
+### Swagger
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:8080/api-docs`
+- `X-USER-ID` 헤더가 필요한 API는 Swagger UI에서 직접 헤더 값을 넣어 테스트할 수 있습니다.
 
 ### 테스트 실행
 - 테스트는 `Testcontainers MySQL`을 사용하므로, **Docker가 실행 중이면 로컬 MySQL 없이도** 동작합니다.
