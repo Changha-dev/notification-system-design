@@ -132,7 +132,7 @@ Response
 ```
 
 ## 데이터 모델 설명
-알림 테이블과 알림 이벤트에 대한 영속성 보장을 위해 알림 아웃박스 테이블을 설계하였습니다. 
+알림 도메인 테이블과 운영 보조 테이블을 분리하여 설계하였습니다.  
 #### 알림 테이블
 - `notification_type`: 알림 유형
 - `reference_id`: 동일 이벤트 식별값(참조 데이터)
@@ -147,11 +147,19 @@ Response
 - `available_at`: 아웃박스 레코드를 다시 처리할 수 있는 시각
 - `locked_by`: 다중 인스턴스 환경에서 어떤 인스턴스가 선점했는지 식별하기 위한 값
 - `last_failure_code`, `last_failure_message`: 마지막 실패 원인 기록
+#### ShedLock 테이블
+- `name`: 분산락 이름
+- `lock_until`: 현재 락이 유효한 시각
+- `locked_at`: 락을 획득한 시각
+- `locked_by`: 락을 획득한 인스턴스 식별값
+- 스케줄러 중복 실행 방지를 위한 운영용 테이블
 
 
 ```mermaid
-erDiagram
-    NOTIFICATION {
+classDiagram
+    direction LR
+
+    class NOTIFICATION {
         BIGINT id PK
         BIGINT recipient_id
         VARCHAR notification_type
@@ -166,7 +174,7 @@ erDiagram
         DATETIME updated_at
     }
 
-    NOTIFICATION_OUTBOX {
+    class NOTIFICATION_OUTBOX {
         BIGINT id PK
         BIGINT notification_id FK
         VARCHAR status
@@ -180,15 +188,22 @@ erDiagram
         DATETIME updated_at
     }
 
-    MEMBER_STATS {
+    class MEMBER_STATS {
         BIGINT member_id PK
         INT unread_count
         DATETIME created_at
         DATETIME updated_at
     }
 
-    NOTIFICATION ||--|| NOTIFICATION_OUTBOX : has
-    MEMBER_STATS ||--o{ NOTIFICATION : aggregates
+    class SHEDLOCK {
+        VARCHAR name PK
+        TIMESTAMP lock_until
+        TIMESTAMP locked_at
+        VARCHAR locked_by
+    }
+
+    NOTIFICATION "1" --> "1" NOTIFICATION_OUTBOX : has
+    MEMBER_STATS "1" --> "0..*" NOTIFICATION : aggregates
 ```
 ## 요구사항 해석 및 가정
 ```plain
