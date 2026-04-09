@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 import com.changha.notification.domain.NotificationChannel;
 import com.changha.notification.domain.Notification;
 import com.changha.notification.domain.NotificationType;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
@@ -31,6 +32,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     Page<Notification> findByRecipientIdAndReadAtIsNotNullOrderByCreatedAtDesc(Long recipientId, Pageable pageable);
 
+    @Transactional
     @Modifying
     @Query("""
         update Notification notification

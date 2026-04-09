@@ -32,6 +32,10 @@ import com.changha.notification.repository.NotificationOutboxRepository;
 import com.changha.notification.repository.NotificationRepository;
 import com.changha.notification.repository.NotificationScheduleRepository;
 
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.TransactionDefinition;
+
 @Service
 public class NotificationApplicationService {
 
@@ -41,6 +45,7 @@ public class NotificationApplicationService {
     private final NotificationTemplateRenderer templateRenderer;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
+    private final TransactionTemplate newTransactionTemplate;
 
     public NotificationApplicationService(
             NotificationRepository notificationRepository,
@@ -48,7 +53,8 @@ public class NotificationApplicationService {
             NotificationScheduleRepository notificationScheduleRepository,
             NotificationTemplateRenderer templateRenderer,
             ApplicationEventPublisher eventPublisher,
-            Clock clock
+            Clock clock,
+            PlatformTransactionManager transactionManager
     ) {
         this.notificationRepository = notificationRepository;
         this.notificationOutboxRepository = notificationOutboxRepository;
@@ -56,6 +62,8 @@ public class NotificationApplicationService {
         this.templateRenderer = templateRenderer;
         this.eventPublisher = eventPublisher;
         this.clock = clock;
+        this.newTransactionTemplate = new TransactionTemplate(transactionManager);
+        this.newTransactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
     @Transactional
@@ -125,7 +133,7 @@ public class NotificationApplicationService {
 
     @Transactional
     public boolean dispatchScheduledNotification(Long scheduleId) {
-        NotificationSchedule schedule = notificationScheduleRepository.findById(scheduleId)
+        NotificationSchedule schedule = notificationScheduleRepository.findByIdForUpdate(scheduleId)
                 .orElseThrow(() -> new IllegalArgumentException("Schedule not found. scheduleId=" + scheduleId));
 
         if (schedule.getStatus() != NotificationScheduleStatus.PENDING) {
@@ -153,15 +161,17 @@ public class NotificationApplicationService {
         }
 
         try {
-            NotificationSchedule schedule = notificationScheduleRepository.save(new NotificationSchedule(
-                    request.recipientId(),
-                    request.notificationType(),
-                    request.referenceId(),
-                    request.channel(),
-                    scheduleAt
-            ));
-            return new NotificationAcceptedResponse(null, schedule.getId(), schedule.getStatus().name(), true,
-                    "알림 예약 요청이 접수되었습니다.");
+            return newTransactionTemplate.execute(status -> {
+                NotificationSchedule schedule = notificationScheduleRepository.save(new NotificationSchedule(
+                        request.recipientId(),
+                        request.notificationType(),
+                        request.referenceId(),
+                        request.channel(),
+                        scheduleAt
+                ));
+                return new NotificationAcceptedResponse(null, schedule.getId(), schedule.getStatus().name(), true,
+                        "알림 예약 요청이 접수되었습니다.");
+            });
         } catch (DataIntegrityViolationException exception) {
             NotificationSchedule schedule = notificationScheduleRepository
                     .findByRecipientIdAndNotificationTypeAndReferenceIdAndChannelAndScheduledAt(
@@ -195,20 +205,22 @@ public class NotificationApplicationService {
         }
 
         try {
-            RenderedNotificationContent content = templateRenderer.render(notificationType, channel, referenceId);
-            Notification notification = notificationRepository.save(new Notification(
-                    recipientId,
-                    notificationType,
-                    referenceId,
-                    channel,
-                    NotificationStatus.PENDING,
-                    content.title(),
-                    content.body()
-            ));
-            NotificationOutbox outbox = notificationOutboxRepository.save(new NotificationOutbox(notification, LocalDateTime.now(clock)));
-            eventPublisher.publishEvent(new NotificationOutboxCreatedEvent(outbox.getId()));
-            return new NotificationAcceptedResponse(notification.getId(), null, notification.getStatus().name(), true,
-                    "알림 요청이 접수되었습니다.");
+            return newTransactionTemplate.execute(status -> {
+                RenderedNotificationContent content = templateRenderer.render(notificationType, channel, referenceId);
+                Notification notification = notificationRepository.save(new Notification(
+                        recipientId,
+                        notificationType,
+                        referenceId,
+                        channel,
+                        NotificationStatus.PENDING,
+                        content.title(),
+                        content.body()
+                ));
+                NotificationOutbox outbox = notificationOutboxRepository.save(new NotificationOutbox(notification, LocalDateTime.now(clock)));
+                eventPublisher.publishEvent(new NotificationOutboxCreatedEvent(outbox.getId()));
+                return new NotificationAcceptedResponse(notification.getId(), null, notification.getStatus().name(), true,
+                        "알림 요청이 접수되었습니다.");
+            });
         } catch (DataIntegrityViolationException exception) {
             Notification notification = notificationRepository.findByRecipientIdAndNotificationTypeAndReferenceIdAndChannel(
                     recipientId,

@@ -12,7 +12,18 @@ import com.changha.notification.domain.NotificationSchedule;
 import com.changha.notification.domain.NotificationScheduleStatus;
 import com.changha.notification.domain.NotificationType;
 
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
+import jakarta.persistence.QueryHint;
+
 public interface NotificationScheduleRepository extends JpaRepository<NotificationSchedule, Long> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints({@QueryHint(name = "jakarta.persistence.lock.timeout", value = "3000")})
+    @Query("select s from NotificationSchedule s where s.id = :id")
+    java.util.Optional<NotificationSchedule> findByIdForUpdate(@Param("id") Long id);
 
     java.util.Optional<NotificationSchedule> findByRecipientIdAndNotificationTypeAndReferenceIdAndChannelAndScheduledAt(
             Long recipientId,
