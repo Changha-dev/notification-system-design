@@ -58,6 +58,7 @@ public abstract class AbstractMySqlIntegrationTest {
         jdbcTemplate.update("delete from notification_outbox");
         jdbcTemplate.update("delete from notification_schedules");
         jdbcTemplate.update("delete from notifications");
+        jdbcTemplate.update("delete from member_stats");
         jdbcTemplate.update("delete from shedlock");
         mutableClock.reset(MutableClock.seoulBaseline().instant());
         reset(emailGateway, inAppGateway);

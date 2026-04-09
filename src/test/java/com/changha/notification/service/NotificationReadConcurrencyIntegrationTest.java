@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.changha.notification.controller.NotificationFixtures;
 import com.changha.notification.dto.CreateNotificationRequest;
+import com.changha.notification.repository.MemberStatsRepository;
 import com.changha.notification.repository.NotificationRepository;
 import com.changha.notification.testsupport.AbstractMySqlIntegrationTest;
 
@@ -23,6 +24,9 @@ class NotificationReadConcurrencyIntegrationTest extends AbstractMySqlIntegratio
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired
+    private MemberStatsRepository memberStatsRepository;
+
     @DisplayName("동시 요청 시에도 읽음 처리 시간(readAt)은 1번만 기록되어야 한다")
     @Test
     void concurrentReadShouldWriteReadAtOnlyOnce() throws Exception {
@@ -31,18 +35,25 @@ class NotificationReadConcurrencyIntegrationTest extends AbstractMySqlIntegratio
 
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             CompletableFuture<Integer> first = CompletableFuture.supplyAsync(
-                    () -> notificationRepository.markReadIfUnread(notificationId, 1001L, mutableClock.now()),
+                    () -> {
+                        notificationApplicationService.markRead(notificationId, 1001L);
+                        return 1;
+                    },
                     executor
             );
             CompletableFuture<Integer> second = CompletableFuture.supplyAsync(
-                    () -> notificationRepository.markReadIfUnread(notificationId, 1001L, mutableClock.now()),
+                    () -> {
+                        notificationApplicationService.markRead(notificationId, 1001L);
+                        return 1;
+                    },
                     executor
             );
 
-            int totalUpdated = first.get() + second.get();
+            first.get();
+            second.get();
 
-            assertThat(totalUpdated).isEqualTo(1);
             assertThat(notificationRepository.findById(notificationId).orElseThrow().getReadAt()).isNotNull();
+            assertThat(memberStatsRepository.findById(1001L).orElseThrow().getUnreadCount()).isZero();
         }
     }
 }

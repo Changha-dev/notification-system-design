@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.changha.notification.domain.Notification;
 import com.changha.notification.dto.CreateNotificationRequest;
 import com.changha.notification.dto.ReadFilter;
+import com.changha.notification.repository.MemberStatsRepository;
 import com.changha.notification.repository.NotificationOutboxRepository;
 import com.changha.notification.repository.NotificationRepository;
 import com.changha.notification.repository.NotificationScheduleRepository;
@@ -42,6 +43,9 @@ class NotificationApiIntegrationTest extends AbstractMySqlIntegrationTest {
     @Autowired
     private NotificationScheduleRepository scheduleRepository;
 
+    @Autowired
+    private MemberStatsRepository memberStatsRepository;
+
     @DisplayName("새 알림 생성 시 알림과 아웃박스가 성공적으로 저장되어야 한다")
     @Test
     void createNotificationShouldPersistNotificationAndOutbox() throws Exception {
@@ -57,6 +61,7 @@ class NotificationApiIntegrationTest extends AbstractMySqlIntegrationTest {
 
         assertThat(notificationRepository.count()).isEqualTo(1);
         assertThat(outboxRepository.count()).isEqualTo(1);
+        assertThat(memberStatsRepository.findById(1001L).orElseThrow().getUnreadCount()).isEqualTo(1);
     }
 
     @DisplayName("중복된 알림 생성 요청 시 단일 알림과 아웃박스만 유지되어야 한다")
@@ -80,6 +85,7 @@ class NotificationApiIntegrationTest extends AbstractMySqlIntegrationTest {
         assertThat(firstResponse.get("notificationId").asLong()).isEqualTo(secondResponse.get("notificationId").asLong());
         assertThat(notificationRepository.count()).isEqualTo(1);
         assertThat(outboxRepository.count()).isEqualTo(1);
+        assertThat(memberStatsRepository.findById(1001L).orElseThrow().getUnreadCount()).isEqualTo(1);
     }
 
     @DisplayName("알림 상세 조회, 읽음 처리 및 필터링 조회가 정상적으로 동작해야 한다")
@@ -113,9 +119,12 @@ class NotificationApiIntegrationTest extends AbstractMySqlIntegrationTest {
                         .param("page", "0")
                         .param("size", "20"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.unreadCount").value(0))
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].notificationId").value(notificationId))
                 .andExpect(jsonPath("$.content[0].isRead").value(true));
+
+        assertThat(memberStatsRepository.findById(1001L).orElseThrow().getUnreadCount()).isZero();
     }
 
     @DisplayName("예약 알림 생성 시 발송 전까지는 예약 스케줄 정보만 저장되어야 한다")

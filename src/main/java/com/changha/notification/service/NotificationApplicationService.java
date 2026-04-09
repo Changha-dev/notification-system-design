@@ -31,6 +31,7 @@ import com.changha.notification.event.NotificationOutboxCreatedEvent;
 import com.changha.notification.repository.NotificationOutboxRepository;
 import com.changha.notification.repository.NotificationRepository;
 import com.changha.notification.repository.NotificationScheduleRepository;
+import com.changha.notification.repository.MemberStatsRepository;
 
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -42,6 +43,7 @@ public class NotificationApplicationService {
     private final NotificationRepository notificationRepository;
     private final NotificationOutboxRepository notificationOutboxRepository;
     private final NotificationScheduleRepository notificationScheduleRepository;
+    private final MemberStatsRepository memberStatsRepository;
     private final NotificationTemplateRenderer templateRenderer;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
@@ -51,6 +53,7 @@ public class NotificationApplicationService {
             NotificationRepository notificationRepository,
             NotificationOutboxRepository notificationOutboxRepository,
             NotificationScheduleRepository notificationScheduleRepository,
+            MemberStatsRepository memberStatsRepository,
             NotificationTemplateRenderer templateRenderer,
             ApplicationEventPublisher eventPublisher,
             Clock clock,
@@ -59,6 +62,7 @@ public class NotificationApplicationService {
         this.notificationRepository = notificationRepository;
         this.notificationOutboxRepository = notificationOutboxRepository;
         this.notificationScheduleRepository = notificationScheduleRepository;
+        this.memberStatsRepository = memberStatsRepository;
         this.templateRenderer = templateRenderer;
         this.eventPublisher = eventPublisher;
         this.clock = clock;
@@ -119,13 +123,19 @@ public class NotificationApplicationService {
                         notification.getCreatedAt()
                 ))
                 .toList();
-        return new NotificationListResponse(content, page, size, notifications.hasNext());
+        long unreadCount = memberStatsRepository.findById(recipientId)
+                .map(stats -> (long) stats.getUnreadCount())
+                .orElseGet(() -> notificationRepository.countByRecipientIdAndReadAtIsNull(recipientId));
+        return new NotificationListResponse(content, unreadCount, page, size, notifications.hasNext());
     }
 
     @Transactional
     public ReadNotificationResponse markRead(Long notificationId, Long recipientId) {
         LocalDateTime now = LocalDateTime.now(clock);
-        notificationRepository.markReadIfUnread(notificationId, recipientId, now);
+        int updatedRows = notificationRepository.markReadIfUnread(notificationId, recipientId, now);
+        if (updatedRows == 1) {
+            memberStatsRepository.decrementUnreadCountIfPositive(recipientId, now);
+        }
         Notification notification = notificationRepository.findByIdAndRecipientId(notificationId, recipientId)
                 .orElseThrow(() -> new NotificationNotFoundException(notificationId, recipientId));
         return new ReadNotificationResponse(notification.getId(), notification.isRead(), notification.getReadAt());
@@ -216,6 +226,7 @@ public class NotificationApplicationService {
                         content.title(),
                         content.body()
                 ));
+                memberStatsRepository.incrementUnreadCount(recipientId, LocalDateTime.now(clock));
                 NotificationOutbox outbox = notificationOutboxRepository.save(new NotificationOutbox(notification, LocalDateTime.now(clock)));
                 eventPublisher.publishEvent(new NotificationOutboxCreatedEvent(outbox.getId()));
                 return new NotificationAcceptedResponse(notification.getId(), null, notification.getStatus().name(), true,

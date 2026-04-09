@@ -32,6 +32,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     Page<Notification> findByRecipientIdAndReadAtIsNotNullOrderByCreatedAtDesc(Long recipientId, Pageable pageable);
 
+    long countByRecipientIdAndReadAtIsNull(Long recipientId);
+
     @Transactional
     @Modifying
     @Query("""
