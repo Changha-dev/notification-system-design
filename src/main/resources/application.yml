@@ -2,7 +2,7 @@ spring:
   profiles:
     default: local
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3406/notification_system?createDatabaseIfNotExist=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
+    url: ${DB_URL:jdbc:mysql://localhost:3306/notification_system?createDatabaseIfNotExist=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8}
     username: ${DB_USERNAME:notification}
     password: ${DB_PASSWORD:notification}
     driver-class-name: com.mysql.cj.jdbc.Driver
