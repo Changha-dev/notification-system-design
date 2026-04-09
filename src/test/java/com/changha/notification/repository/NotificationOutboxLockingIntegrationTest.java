@@ -6,6 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -17,6 +18,7 @@ import com.changha.notification.testsupport.AbstractMySqlIntegrationTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DisplayName("아웃박스 잠금(Locking) 통합 테스트")
 class NotificationOutboxLockingIntegrationTest extends AbstractMySqlIntegrationTest {
 
     @Autowired
@@ -28,6 +30,7 @@ class NotificationOutboxLockingIntegrationTest extends AbstractMySqlIntegrationT
     @Autowired
     private PlatformTransactionManager transactionManager;
 
+    @DisplayName("아웃박스 배치 폴링 시 락이 걸린 행(Row)은 건너뛰고 나머지 행만 가져와야 한다")
     @Test
     void claimPendingBatchShouldSkipLockedRows() throws Exception {
         Long firstOutboxId = createOutboxId(5001L);

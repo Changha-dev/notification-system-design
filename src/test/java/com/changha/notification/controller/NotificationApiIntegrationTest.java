@@ -2,6 +2,7 @@ package com.changha.notification.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,6 +24,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@DisplayName("알림 API 통합 테스트")
 class NotificationApiIntegrationTest extends AbstractMySqlIntegrationTest {
 
     @Autowired
@@ -40,6 +42,7 @@ class NotificationApiIntegrationTest extends AbstractMySqlIntegrationTest {
     @Autowired
     private NotificationScheduleRepository scheduleRepository;
 
+    @DisplayName("새 알림 생성 시 알림과 아웃박스가 성공적으로 저장되어야 한다")
     @Test
     void createNotificationShouldPersistNotificationAndOutbox() throws Exception {
         CreateNotificationRequest request = NotificationFixtures.createImmediateEmailRequest();
@@ -56,6 +59,7 @@ class NotificationApiIntegrationTest extends AbstractMySqlIntegrationTest {
         assertThat(outboxRepository.count()).isEqualTo(1);
     }
 
+    @DisplayName("중복된 알림 생성 요청 시 단일 알림과 아웃박스만 유지되어야 한다")
     @Test
     void duplicateCreateShouldKeepSingleNotificationAndOutbox() throws Exception {
         CreateNotificationRequest request = NotificationFixtures.createImmediateEmailRequest();
@@ -78,6 +82,7 @@ class NotificationApiIntegrationTest extends AbstractMySqlIntegrationTest {
         assertThat(outboxRepository.count()).isEqualTo(1);
     }
 
+    @DisplayName("알림 상세 조회, 읽음 처리 및 필터링 조회가 정상적으로 동작해야 한다")
     @Test
     void getDetailListAndReadFilterShouldWork() throws Exception {
         CreateNotificationRequest request = NotificationFixtures.createImmediateEmailRequest();
@@ -113,6 +118,7 @@ class NotificationApiIntegrationTest extends AbstractMySqlIntegrationTest {
                 .andExpect(jsonPath("$.content[0].isRead").value(true));
     }
 
+    @DisplayName("예약 알림 생성 시 발송 전까지는 예약 스케줄 정보만 저장되어야 한다")
     @Test
     void createScheduledNotificationShouldPersistOnlyScheduleBeforeDispatch() throws Exception {
         CreateNotificationRequest request = NotificationFixtures.createScheduledEmailRequest(mutableClock.now().plusMinutes(10));

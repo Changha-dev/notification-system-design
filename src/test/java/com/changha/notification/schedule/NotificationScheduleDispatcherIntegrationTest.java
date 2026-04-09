@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -18,6 +19,7 @@ import com.changha.notification.testsupport.AbstractMySqlIntegrationTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@DisplayName("예약 알림 디스패처 통합 테스트")
 class NotificationScheduleDispatcherIntegrationTest extends AbstractMySqlIntegrationTest {
 
     @Autowired
@@ -35,6 +37,7 @@ class NotificationScheduleDispatcherIntegrationTest extends AbstractMySqlIntegra
     @Autowired
     private NotificationScheduleRepository notificationScheduleRepository;
 
+    @DisplayName("예약 시간에 도달하면 알림과 아웃박스가 생성되어야 한다")
     @Test
     void scheduleDispatcherShouldCreateNotificationAndOutboxWhenTimeArrives() {
         CreateNotificationRequest request = NotificationFixtures.createScheduledEmailRequest(mutableClock.now().plusMinutes(10));
@@ -51,6 +54,7 @@ class NotificationScheduleDispatcherIntegrationTest extends AbstractMySqlIntegra
         assertThat(notificationOutboxRepository.count()).isEqualTo(1);
     }
 
+    @DisplayName("다수의 인스턴스 또는 스레드에서 동시 처리 시 잠금을 통해 중복 발송을 방지해야 한다")
     @Test
     void shedLockShouldPreventDuplicateDispatchUnderConcurrentCalls() throws Exception {
         CreateNotificationRequest request = NotificationFixtures.createScheduledEmailRequest(mutableClock.now().plusMinutes(1));
