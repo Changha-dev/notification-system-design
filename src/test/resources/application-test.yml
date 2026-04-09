@@ -1,0 +1,20 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  sql:
+    init:
+      mode: always
+
+app:
+  notification:
+    auto-dispatch-enabled: false
+    retry:
+      max-attempts: 3
+      base-delay-seconds: 1
+    recovery:
+      batch-size: 20
+      lease-timeout-seconds: 5
+    executor:
+      type: platform
