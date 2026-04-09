@@ -37,14 +37,18 @@ export DB_URL="jdbc:mysql://localhost:3306/notification_system?createDatabaseIfN
 export DB_USERNAME="notification"
 export DB_PASSWORD="notification"
 ```
-4. 애플리케이션을 실행합니다.
+4. 샘플 데이터까지 함께 보고 싶다면 `local` 프로필을 활성화합니다.
+```bash
+export SPRING_PROFILES_ACTIVE="local"
+```
+5. 애플리케이션을 실행합니다.
 ```bash
 ./gradlew bootRun
 ```
 
 ### 테스트 실행
 - 테스트는 `Testcontainers MySQL`을 사용하므로, **Docker가 실행 중이면 로컬 MySQL 없이도** 동작합니다.
-- Docker가 없는 환경에서는 MySQL 통합 테스트가 자동으로 스킵되고 단위 테스트만 실행됩니다.
+- 현재 통합 테스트는 MySQL 컨테이너를 직접 기동하므로 Docker가 필요합니다.
 
 ```bash
 ./gradlew test
@@ -96,6 +100,7 @@ Response
 ```json
 Response
 {
+  "unreadCount": 1,
   "content": [
     {
       "notificationId": 3,
@@ -127,9 +132,12 @@ Response
 알림 테이블과 알림 이벤트에 대한 영속성 보장을 위해 알림 아웃박스 테이블을 설계하였습니다. 
 #### 알림 테이블
 - `notification_type`: 알림 유형
-- `reference_key`: 동일 이벤트 식별값(참조 데이터)
+- `reference_id`: 동일 이벤트 식별값(참조 데이터)
 - `channel`: 이메일 or 인앱 구분
 - `status`: 사용자 관점의 발송 상태(`PENDING`, `SENDING`, `SENT`, `FAILED`)
+#### 회원 통계 테이블
+- `member_id`: 알림 수신 사용자 식별값
+- `unread_count`: 읽지 않은 알림 개수의 역정규화 값
 #### 알림 아웃박스 테이블
 - `status`: 워커 처리 상태 (`PENDING`, `PROCESSING`, `COMPLETED`, `DEAD`)
 - `retry_count`: 현재까지 재시도한 횟수
@@ -144,7 +152,7 @@ erDiagram
         BIGINT id PK
         BIGINT recipient_id
         VARCHAR notification_type
-        VARCHAR reference_key
+        BIGINT reference_id
         VARCHAR channel
         VARCHAR status
         TEXT title
@@ -169,7 +177,15 @@ erDiagram
         DATETIME updated_at
     }
 
+    MEMBER_STATS {
+        BIGINT member_id PK
+        INT unread_count
+        DATETIME created_at
+        DATETIME updated_at
+    }
+
     NOTIFICATION ||--|| NOTIFICATION_OUTBOX : has
+    MEMBER_STATS ||--o{ NOTIFICATION : aggregates
 ```
 ## 요구사항 해석 및 가정
 ```plain
@@ -187,7 +203,7 @@ erDiagram
 ```
 #### 설명:  
 **멱등 키**를 설계하여 중복 요청을 방지하도록 해야되겠다고 생각이 들었습니다.  
-**가정**: 참조 데이터(referenceKey)는 유일한 식별키라고 가정하였습니다. 
+**가정**: 참조 데이터(referenceId)는 유일한 식별키라고 가정하였습니다. 
 - 예외케이스: lectureId가 referenceKey로 온다면 제대로된 멱등 키 역할을 하지 못할 수 있기 때문입니다.
   - 예: 동일한 강의에 대한 결제 과정(완료 -> 취소)가 2번 이상 반복되면 알림이 와야됨에도 중복 처리 될 수 있음.
 
