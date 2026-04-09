@@ -23,7 +23,7 @@ app:
     auto-dispatch-enabled: true
     retry:
       max-attempts: 3
-      base-delay-seconds: 1
+      base-delay-seconds: 5
     recovery:
       batch-size: 20
       lease-timeout-seconds: 30

@@ -82,9 +82,10 @@ class NotificationProcessingIntegrationTest extends AbstractMySqlIntegrationTest
         Notification firstNotification = notificationRepository.findAll().getFirst();
         assertThat(firstAttempt.getStatus()).isEqualTo(NotificationOutboxStatus.PENDING);
         assertThat(firstAttempt.getRetryCount()).isEqualTo(1);
+        assertThat(firstAttempt.getAvailableAt()).isEqualTo(mutableClock.now().plusSeconds(5));
         assertThat(firstNotification.getStatus()).isEqualTo(NotificationStatus.PENDING);
 
-        mutableClock.advanceSeconds(2);
+        mutableClock.advanceSeconds(5);
         notificationOutboxProcessor.processPendingOutbox(outboxId, "worker-2");
 
         NotificationOutbox secondAttempt = notificationOutboxRepository.findById(outboxId).orElseThrow();
@@ -104,9 +105,21 @@ class NotificationProcessingIntegrationTest extends AbstractMySqlIntegrationTest
                 .send(any(), anyString());
 
         notificationOutboxProcessor.processPendingOutbox(outboxId, "worker-1");
-        mutableClock.advanceSeconds(2);
+
+        NotificationOutbox firstAttempt = notificationOutboxRepository.findById(outboxId).orElseThrow();
+        assertThat(firstAttempt.getStatus()).isEqualTo(NotificationOutboxStatus.PENDING);
+        assertThat(firstAttempt.getRetryCount()).isEqualTo(1);
+        assertThat(firstAttempt.getAvailableAt()).isEqualTo(mutableClock.now().plusSeconds(5));
+
+        mutableClock.advanceSeconds(5);
         notificationOutboxProcessor.processPendingOutbox(outboxId, "worker-2");
-        mutableClock.advanceSeconds(4);
+
+        NotificationOutbox secondAttempt = notificationOutboxRepository.findById(outboxId).orElseThrow();
+        assertThat(secondAttempt.getStatus()).isEqualTo(NotificationOutboxStatus.PENDING);
+        assertThat(secondAttempt.getRetryCount()).isEqualTo(2);
+        assertThat(secondAttempt.getAvailableAt()).isEqualTo(mutableClock.now().plusSeconds(10));
+
+        mutableClock.advanceSeconds(10);
         notificationOutboxProcessor.processPendingOutbox(outboxId, "worker-3");
 
         NotificationOutbox outbox = notificationOutboxRepository.findById(outboxId).orElseThrow();
